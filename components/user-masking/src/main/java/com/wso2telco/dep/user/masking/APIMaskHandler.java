@@ -74,7 +74,7 @@ public class APIMaskHandler extends AbstractHandler {
 				// Replace resource property with updated user ID since resource path contains user ID
 				if(!resource.contains(userId)) {
 					String urlUserId = resource.substring(resource.indexOf("/") + 1, resource.lastIndexOf("/transactions/amount"));
-					if (!UserMaskHandler.isMaskedUserId(urlUserId)) {
+					if (!UserMaskHandler.isMaskedUserId(URLDecoder.decode(urlUserId, "UTF-8"))) {
 						String resourceUserId = UserMaskHandler.maskUserId(URLDecoder.decode(urlUserId, "UTF-8"), true, maskingSecretKey);
 						resource = "/" + URLEncoder.encode(resourceUserId, "UTF-8") + "/transactions/amount";
 					}

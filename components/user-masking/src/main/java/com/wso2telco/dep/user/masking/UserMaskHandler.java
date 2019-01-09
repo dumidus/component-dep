@@ -4,8 +4,6 @@ import com.wso2telco.dep.user.masking.utils.MaskingUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.MessageContext;
-import org.apache.synapse.mediators.AbstractMediator;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -19,8 +17,23 @@ public class UserMaskHandler {
     private static final Log log = LogFactory.getLog(UserMaskHandler.class);
 
     public static String maskUserId(String userId, boolean encript, String secretKey) {
+        String userPrefix = "";
         String returnedUserId = userId;
         try {
+            if (userId.startsWith("tel:+")) {
+                userId = userId.substring(5);
+                userPrefix = "tel:+";
+            } else if (userId.startsWith("tel:")) {
+                userId = userId.substring(4);
+                userPrefix = "tel:";
+            } else if (userId.startsWith("tel")) {
+                userPrefix = "tel";
+                userId = userId.substring(3);
+            } else if (userId.startsWith("+")) {
+                userPrefix = "+";
+                userId = userId.substring(1);
+            }
+
             if (secretKey != null && !secretKey.isEmpty()) {
                 if (encript) {
                     returnedUserId = encrypt(userId, secretKey);
@@ -33,7 +46,7 @@ public class UserMaskHandler {
         } catch (Exception e) {
             log.error("Error while masking/unmasking user ID " + e);
         }
-        return  returnedUserId;
+        return  userPrefix + returnedUserId;
     }
 
     /**
@@ -62,8 +75,8 @@ public class UserMaskHandler {
      * @return true if a masked user ID
      */
     public static boolean isMaskedUserId(String userId) {
-        return  Base64.isArrayByteBase64(userId.getBytes());
-
+        String defaultRegex = "^((((tel:){1}(\\+){0,1})|((tel:){0,1}(\\+){1}))([a-zA-Z0-9]+))$";
+        return  !userId.matches(defaultRegex);
     }
 
     /**
