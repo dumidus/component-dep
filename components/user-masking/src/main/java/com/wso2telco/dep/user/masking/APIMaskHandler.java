@@ -17,6 +17,7 @@ import org.wso2.carbon.apimgt.api.APIManagementException;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.Map;
@@ -136,7 +137,12 @@ public class APIMaskHandler extends AbstractHandler {
 					JSONObject objAmountTransaction = (JSONObject) jsonBody.get("amountTransaction");
 					String transactionOperationStatus = objAmountTransaction.get("transactionOperationStatus").toString();
 					String userId = (String) objAmountTransaction.get("endUserId");
-                    String resourceURL = (String) objAmountTransaction.get("resourceURL");
+					String resourceURL = null;
+					try {
+						resourceURL = URLDecoder.decode((String) objAmountTransaction.get("resourceURL"), "UTF-8");
+					} catch (UnsupportedEncodingException e) {
+						log.error("Error occurred while decoding resource url. Can't add decrypted user mask.");
+					}
 					//Convert Masked UserID to User ID
 					if (UserMaskHandler.isMaskedUserId(userId)) {
 					    String maskedUserId = userId;
