@@ -136,12 +136,16 @@ public class APIMaskHandler extends AbstractHandler {
 					JSONObject objAmountTransaction = (JSONObject) jsonBody.get("amountTransaction");
 					String transactionOperationStatus = objAmountTransaction.get("transactionOperationStatus").toString();
 					String userId = (String) objAmountTransaction.get("endUserId");
+                    String resourceURL = (String) objAmountTransaction.get("resourceURL");
 					//Convert Masked UserID to User ID
 					if (UserMaskHandler.isMaskedUserId(userId)) {
+					    String maskedUserId = userId;
 						userId = UserMaskHandler.maskUserId(userId, false, maskingSecretKey);
+						resourceURL.replace(maskedUserId, userId);
 					}
 					// Updated payload with Masked user ID
 					objAmountTransaction.put("endUserId", userId);
+					objAmountTransaction.put("resourceURL", resourceURL);
 					jsonBody.put("amountTransaction", objAmountTransaction);
 					updateJsonPayload(jsonBody.toString(), messageContext);
 				}
