@@ -137,20 +137,22 @@ public class APIMaskHandler extends AbstractHandler {
 					JSONObject objAmountTransaction = (JSONObject) jsonBody.get("amountTransaction");
 					String transactionOperationStatus = objAmountTransaction.get("transactionOperationStatus").toString();
 					String userId = (String) objAmountTransaction.get("endUserId");
-					String resourceURL = null;
-					try {
-						resourceURL = URLDecoder.decode((String) objAmountTransaction.get("resourceURL"), "UTF-8");
-					} catch (UnsupportedEncodingException e) {
-						log.error("Error occurred while decoding resource url. Can't add decrypted user mask.");
-					}
+					String resourceURL = (String) objAmountTransaction.get("resourceURL");
 					//Convert Masked UserID to User ID
 					if (UserMaskHandler.isMaskedUserId(userId)) {
-					    String maskedUserId = userId;
+						String maskedUserId = userId;
 						userId = UserMaskHandler.maskUserId(userId, false, maskingSecretKey);
-						resourceURL.replace(maskedUserId, userId);
+						// Updated payload with Masked user ID
+						objAmountTransaction.put("endUserId", userId);
+						try {
+							userId = URLEncoder.encode(userId, "UTF-8");
+							maskedUserId = URLEncoder.encode(maskedUserId, "UTF-8");
+						} catch (UnsupportedEncodingException e) {
+							log.error("Error occurred while encoding user id. Can't add decrypted user mask.");
+						}
+						resourceURL = resourceURL.replace(maskedUserId, userId);
 					}
-					// Updated payload with Masked user ID
-					objAmountTransaction.put("endUserId", userId);
+
 					objAmountTransaction.put("resourceURL", resourceURL);
 					jsonBody.put("amountTransaction", objAmountTransaction);
 					updateJsonPayload(jsonBody.toString(), messageContext);
@@ -174,6 +176,25 @@ public class APIMaskHandler extends AbstractHandler {
 					}
 					// Set updated address list to request
 					outboundSMSMessageRequest.put("address", newAddressArray);
+
+					// Update delivery information with response
+					if (!outboundSMSMessageRequest.isNull("deliveryInfoList")) {
+						JSONObject deliveryInfoList = (JSONObject) outboundSMSMessageRequest.get("deliveryInfoList");
+						if (!deliveryInfoList.isNull("deliveryInfo")) {
+							JSONArray deliveryInfoArray = (JSONArray) deliveryInfoList.get("deliveryInfo");
+							JSONArray newDeliveryInfoArray = new JSONArray();
+							for (int i = 0; i < deliveryInfoArray.length(); i++) {
+								JSONObject deliveryInfo = (JSONObject) deliveryInfoArray.get(i);
+								JSONObject newDeliveryInfo = new JSONObject();
+								newDeliveryInfo.put("deliveryStatus", (String) deliveryInfo.get("deliveryStatus"));
+								newDeliveryInfo.put("address", UserMaskHandler.maskUserId((String) deliveryInfo.get("address"), false, maskingSecretKey));
+								newDeliveryInfoArray.put(i, newDeliveryInfo);
+							}
+							deliveryInfoList.put("deliveryInfo", newDeliveryInfoArray);
+						}
+						outboundSMSMessageRequest.put("deliveryInfoList", deliveryInfoList);
+					}
+
 					jsonBody.put("outboundSMSMessageRequest", outboundSMSMessageRequest);
 					updateJsonPayload(jsonBody.toString(), messageContext);
 				}

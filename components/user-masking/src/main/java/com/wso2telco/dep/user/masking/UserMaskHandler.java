@@ -2,6 +2,7 @@ package com.wso2telco.dep.user.masking;
 
 import com.wso2telco.dep.user.masking.utils.MaskingUtils;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -55,8 +56,12 @@ public class UserMaskHandler {
      * @return get unmasked user ID
      */
     public static String getUserMask(String userId) {
-        String maskingSecretKey = MaskingUtils.getUserMaskingConfiguration("user.masking.feature.masking.secret.key");
-        return maskUserId(userId, true, maskingSecretKey);
+        if (StringUtils.isNotEmpty(userId)) {
+            String maskingSecretKey = MaskingUtils.getUserMaskingConfiguration(
+                    "user.masking.feature.masking.secret.key");
+            return maskUserId(userId, true, maskingSecretKey);
+        }
+        return userId;
     }
 
     /**
@@ -65,8 +70,15 @@ public class UserMaskHandler {
      * @return
      */
     public static String getUserId(String userMask) {
-        String maskingSecretKey = MaskingUtils.getUserMaskingConfiguration("user.masking.feature.masking.secret.key");
-        return maskUserId(userMask, false, maskingSecretKey);
+        if (StringUtils.isNotEmpty(userMask)) {
+            if (isMaskedUserId(userMask)) {
+                String maskingSecretKey = MaskingUtils.getUserMaskingConfiguration(
+                        "user.masking.feature.masking.secret.key");
+                return maskUserId(userMask, false, maskingSecretKey);
+            }
+            return userMask;
+        }
+        return userMask;
     }
 
     /**

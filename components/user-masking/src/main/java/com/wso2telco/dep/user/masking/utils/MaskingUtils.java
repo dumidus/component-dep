@@ -80,4 +80,19 @@ public class MaskingUtils {
 		}
 		return props;
 	}
+
+	/**
+	 * This method is to filter the user ID bases on country or prefix in order to
+	 * decide whether this number is eligible for user masking
+	 * @param userId
+	 * @return true if masking allowed user ID
+	 */
+	public static boolean isMaskingAllowedUserId(String userId) {
+		boolean isMaskingAllowedUserId = false;
+		String regex = MaskingUtils.getUserMaskingConfiguration("user.masking.feature.user.Id.filter.regex");
+		if (userId != null && regex != null) {
+			isMaskingAllowedUserId = userId.matches(regex);
+		}
+		return isMaskingAllowedUserId;
+	}
 }
