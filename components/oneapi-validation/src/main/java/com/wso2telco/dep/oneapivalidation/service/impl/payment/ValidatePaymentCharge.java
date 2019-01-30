@@ -24,7 +24,9 @@ import com.wso2telco.dep.oneapivalidation.util.ValidationRule;
 import com.wso2telco.dep.user.masking.UserMaskHandler;
 import org.json.JSONObject;
 
- 
+import javax.crypto.BadPaddingException;
+
+
 // TODO: Auto-generated Javadoc
 /**
  * The Class ValidatePaymentCharge.
@@ -134,6 +136,8 @@ public class ValidatePaymentCharge  implements IServiceValidate {
 
             } catch (CustomException e){
                 throw new CustomException(e.getErrcode(), e.getErrmsg(), e.getErrvar());
+            } catch (BadPaddingException e) {
+                throw new CustomException("SVC0001", "A service error occurred.", new String[]{""});
             } catch (Exception e) {
                 System.out.println("Manipulating recived JSON Object: " + e);
                 throw new CustomException("POL0299", "Unexpected Error", new String[]{""});

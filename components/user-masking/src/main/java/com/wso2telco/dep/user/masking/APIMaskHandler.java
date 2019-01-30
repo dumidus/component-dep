@@ -141,7 +141,11 @@ public class APIMaskHandler extends AbstractHandler {
 					//Convert Masked UserID to User ID
 					if (UserMaskHandler.isMaskedUserId(userId)) {
 						String maskedUserId = userId;
-						userId = UserMaskHandler.maskUserId(userId, false, maskingSecretKey);
+						try {
+							userId = UserMaskHandler.maskUserId(userId, false, maskingSecretKey);
+						} catch (Exception e) {
+							log.error("Error occurred while unmaksing user id ", e);
+						}
 						// Updated payload with Masked user ID
 						objAmountTransaction.put("endUserId", userId);
 						try {
@@ -168,7 +172,11 @@ public class APIMaskHandler extends AbstractHandler {
 						//Convert Masked UserID to User ID
 						String userId = addressArray.getString(i);
 						if (UserMaskHandler.isMaskedUserId(userId)) {
-							userId = UserMaskHandler.maskUserId(userId, false, maskingSecretKey);
+							try {
+								userId = UserMaskHandler.maskUserId(userId, false, maskingSecretKey);
+							} catch (Exception e) {
+								log.error("Error occurred while unmaksing user id ", e);
+							}
 							newAddressArray.put(userId);
 						} else {
 							newAddressArray.put(userId);
@@ -187,7 +195,11 @@ public class APIMaskHandler extends AbstractHandler {
 								JSONObject deliveryInfo = (JSONObject) deliveryInfoArray.get(i);
 								JSONObject newDeliveryInfo = new JSONObject();
 								newDeliveryInfo.put("deliveryStatus", (String) deliveryInfo.get("deliveryStatus"));
-								newDeliveryInfo.put("address", UserMaskHandler.maskUserId((String) deliveryInfo.get("address"), false, maskingSecretKey));
+								try {
+									newDeliveryInfo.put("address", UserMaskHandler.maskUserId((String) deliveryInfo.get("address"), false, maskingSecretKey));
+								} catch (Exception e) {
+									log.error("Error occurred while unmaksing user id ", e);
+								}
 								newDeliveryInfoArray.put(i, newDeliveryInfo);
 							}
 							deliveryInfoList.put("deliveryInfo", newDeliveryInfoArray);

@@ -17,7 +17,7 @@ public class UserMaskHandler {
 
     private static final Log log = LogFactory.getLog(UserMaskHandler.class);
 
-    public static String maskUserId(String userId, boolean encript, String secretKey) {
+    public static String maskUserId(String userId, boolean encript, String secretKey) throws Exception {
         String userPrefix = "";
         String returnedUserId = userId;
         try {
@@ -45,7 +45,7 @@ public class UserMaskHandler {
                 log.error("Error while getting configuration, MSISDN_ENCRIPTION_KEY is not provided");
             }
         } catch (Exception e) {
-            log.error("Error while masking/unmasking user ID " + e);
+            throw e;
         }
         return  userPrefix + returnedUserId;
     }
@@ -59,7 +59,12 @@ public class UserMaskHandler {
         if (StringUtils.isNotEmpty(userId)) {
             String maskingSecretKey = MaskingUtils.getUserMaskingConfiguration(
                     "user.masking.feature.masking.secret.key");
-            return maskUserId(userId, true, maskingSecretKey);
+            try {
+                return maskUserId(userId, true, maskingSecretKey);
+            } catch (Exception e) {
+                log.warn("msisdn is already masked or incorrect user mask configuration exists.");
+                return userId;
+            }
         }
         return userId;
     }
@@ -71,12 +76,14 @@ public class UserMaskHandler {
      */
     public static String getUserId(String userMask) {
         if (StringUtils.isNotEmpty(userMask)) {
-            if (isMaskedUserId(userMask)) {
-                String maskingSecretKey = MaskingUtils.getUserMaskingConfiguration(
-                        "user.masking.feature.masking.secret.key");
+            String maskingSecretKey = MaskingUtils.getUserMaskingConfiguration(
+                    "user.masking.feature.masking.secret.key");
+            try {
                 return maskUserId(userMask, false, maskingSecretKey);
+            } catch (Exception e) {
+                log.warn("msisdn is already unmasked or incorrect user mask configuration exists.");
+                return userMask;
             }
-            return userMask;
         }
         return userMask;
     }
