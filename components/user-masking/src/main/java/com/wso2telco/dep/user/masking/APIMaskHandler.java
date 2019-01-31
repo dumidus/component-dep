@@ -10,10 +10,15 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.rest.AbstractHandler;
+import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.wso2.carbon.apimgt.api.APIConsumer;
 import org.wso2.carbon.apimgt.api.APIManagementException;
+import org.wso2.carbon.apimgt.api.model.API;
+import org.wso2.carbon.apimgt.api.model.APIIdentifier;
+import org.wso2.carbon.apimgt.impl.APIManagerFactory;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
@@ -29,10 +34,18 @@ public class APIMaskHandler extends AbstractHandler {
 	@Override
 	public boolean handleRequest(MessageContext messageContext) {
 		try {
+            String apiId = (String) messageContext.getProperty(RESTConstants.SYNAPSE_REST_API);
+            apiId = apiId.replace("--", "_").replace(":v", "_");
+            APIIdentifier apiIdentifier = new APIIdentifier(apiId);
+            APIConsumer apiConsumer = APIManagerFactory.getInstance().getAPIConsumer();
+            API api = apiConsumer.getAPI(apiIdentifier);
+			JSONObject response = new JSONObject(api.getEndpointConfig());
+			String productionEndpoint = response.getJSONObject("production_endpoints").get("url").toString();
+
 		    // Valudate this requires masking
 			if (MaskingUtils.isUserAnonymizationEnabled() && isMaskingAllowedAPI(messageContext)) {
 				maskRequestData(messageContext);
-				setEndpointURL(messageContext);
+				setEndpointURL(messageContext, productionEndpoint);
 			} else {
 				messageContext.setProperty("CUSTOM_ENDPOINT", "false");
 			}
@@ -293,16 +306,19 @@ public class APIMaskHandler extends AbstractHandler {
 	 *  This should be ONLY called when UserAnonymization is Enabled
      * @param messageContext
      */
-	private void setEndpointURL(MessageContext messageContext) throws UserMaskingException {
+	private void setEndpointURL(MessageContext messageContext, String endpointURL) throws UserMaskingException {
 		try {
+
+			if(endpointURL.endsWith("/")) {
+				endpointURL = endpointURL.substring(0,endpointURL.length() - 1);
+			}
 			Object headers = ((Axis2MessageContext) messageContext).getAxis2MessageContext().getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
 			Map headersMap = (Map) headers;
 			String resource = (String)headersMap.get("RESOURCE");
 			// Properties from API-manager.xml
-			String endpointURL = null;
 			APIType type = MaskingUtils.getAPIType(messageContext);
 			if(APIType.PAYMENT.equals(type)) {
-				endpointURL = MaskingUtils.getUrlProperty("user.masking.feature.esb.payment.endpoint.url") + resource;
+				endpointURL += resource;
 				EndpointReference endpointReference = new EndpointReference();
 				endpointReference.setAddress(endpointURL);
 				messageContext.setTo(endpointReference);
