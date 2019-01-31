@@ -346,6 +346,12 @@
 			</dependency>
 			<dependency>
 				<groupId>com.wso2telco.dep</groupId>
+				<artifactId>user-masking</artifactId>
+				<version>${com.wso2telco.dep.version}</version>
+				<scope>provided</scope>
+			</dependency>
+			<dependency>
+				<groupId>com.wso2telco.dep</groupId>
 				<artifactId>reporting-service</artifactId>
 				<version>${com.wso2telco.dep.version}</version>
 				<scope>provided</scope>

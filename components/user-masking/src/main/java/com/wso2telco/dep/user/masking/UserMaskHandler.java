@@ -20,34 +20,31 @@ public class UserMaskHandler {
     public static String maskUserId(String userId, boolean encript, String secretKey) throws Exception {
         String userPrefix = "";
         String returnedUserId = userId;
-        try {
-            if (userId.startsWith("tel:+")) {
-                userId = userId.substring(5);
-                userPrefix = "tel:+";
-            } else if (userId.startsWith("tel:")) {
-                userId = userId.substring(4);
-                userPrefix = "tel:";
-            } else if (userId.startsWith("tel")) {
-                userPrefix = "tel";
-                userId = userId.substring(3);
-            } else if (userId.startsWith("+")) {
-                userPrefix = "+";
-                userId = userId.substring(1);
-            }
-
-            if (secretKey != null && !secretKey.isEmpty()) {
-                if (encript) {
-                    returnedUserId = encrypt(userId, secretKey);
-                } else {
-                    returnedUserId = decrypt(userId, secretKey);
-                }
-            } else {
-                log.error("Error while getting configuration, MSISDN_ENCRIPTION_KEY is not provided");
-            }
-        } catch (Exception e) {
-            throw e;
+        if (userId.startsWith("tel:+")) {
+            userId = userId.substring(5);
+            userPrefix = "tel:+";
+        } else if (userId.startsWith("tel:")) {
+            userId = userId.substring(4);
+            userPrefix = "tel:";
+        } else if (userId.startsWith("tel")) {
+            userPrefix = "tel";
+            userId = userId.substring(3);
+        } else if (userId.startsWith("+")) {
+            userPrefix = "+";
+            userId = userId.substring(1);
         }
-        return  userPrefix + returnedUserId;
+
+        if (secretKey != null && !secretKey.isEmpty()) {
+            if (encript) {
+                returnedUserId = encrypt(userId, secretKey);
+            } else {
+                returnedUserId = decrypt(userId, secretKey);
+            }
+        } else {
+            log.error("Error while getting configuration, MSISDN_ENCRIPTION_KEY is not provided");
+        }
+
+        return userPrefix + returnedUserId;
     }
 
     /**
@@ -61,6 +58,27 @@ public class UserMaskHandler {
                     "user.masking.feature.masking.secret.key");
             try {
                 return maskUserId(userId, true, maskingSecretKey);
+            } catch (Exception e) {
+                log.warn("msisdn is already masked or incorrect user mask configuration exists.");
+                return userId;
+            }
+        }
+        return userId;
+    }
+
+    /**
+     *
+     * @param userId
+     * @return get unmasked user ID
+     */
+    public static String getUserMaskIfAllowed(String userId) {
+        if (StringUtils.isNotEmpty(userId)) {
+            String maskingSecretKey = MaskingUtils.getUserMaskingConfiguration(
+                    "user.masking.feature.masking.secret.key");
+            try {
+                if (MaskingUtils.isUserAnonymizationEnabled() && MaskingUtils.isMaskingAllowedUserId(userId)) {
+                    return maskUserId(userId, true, maskingSecretKey);
+                }
             } catch (Exception e) {
                 log.warn("msisdn is already masked or incorrect user mask configuration exists.");
                 return userId;
@@ -89,6 +107,28 @@ public class UserMaskHandler {
     }
 
     /**
+     * Get user Id for user mask
+     * @param userMask
+     * @return
+     */
+    public static String getProperlyMaskedUserId(String userMask) {
+        if (StringUtils.isNotEmpty(userMask)) {
+            String maskingSecretKey = MaskingUtils.getUserMaskingConfiguration(
+                    "user.masking.feature.masking.secret.key");
+            try {
+                return maskUserId(userMask, false, maskingSecretKey);
+            } catch (Exception e) {
+                if (isCorrectlyFormattedMSISDN(userMask)){
+                    return userMask;
+                }
+                log.warn("msisdn is already unmasked, incorrect user mask configuration exists or previous user " +
+                        "masking configuration changed");
+            }
+        }
+        return userMask;
+    }
+
+    /**
      * Validate given user is a masked user
      * @param userId
      * @return true if a masked user ID
@@ -96,6 +136,16 @@ public class UserMaskHandler {
     public static boolean isMaskedUserId(String userId) {
         String defaultRegex = "^((((tel:){1}(\\+){0,1})|((tel:){0,1}(\\+){1}))([a-zA-Z0-9]+))$";
         return  !userId.matches(defaultRegex);
+    }
+
+    /**
+     * Validate given user is a masked user
+     * @param userId
+     * @return true if a masked user ID
+     */
+    public static boolean isCorrectlyFormattedMSISDN(String userId) {
+        String defaultRegex = "^((((tel:){1}(\\+){0,1})|((tel:){0,1}(\\+){1}))([a-zA-Z0-9]+))$";
+        return  userId.matches(defaultRegex);
     }
 
     /**
