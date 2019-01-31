@@ -161,7 +161,7 @@ public class UserMaskHandler {
             cipher.init(Cipher.ENCRYPT_MODE, getSecretKeySpec(secretKey));
             maskedId =  new String(Base64.encodeBase64(cipher.doFinal(userId.getBytes("UTF-8"))));
         } catch (Exception e) {
-            log.error("Error while encrypting: " + e);
+            log.error("Error while encrypting.");
             throw e;
         }
         return maskedId;
@@ -180,7 +180,9 @@ public class UserMaskHandler {
             cipher.init(Cipher.DECRYPT_MODE, getSecretKeySpec(secretKey));
             userId = new String(cipher.doFinal(Base64.decodeBase64(maskedUserId.getBytes())));
         } catch (Exception e) {
-            log.error("Error while decrypting masked User ID : " +  maskedUserId,  e);
+            log.error("Error while decrypting User ID : " +  maskedUserId + "Possible reasons may be incorrect " +
+                    "user mask configuration, configuration changed without proper migration or already un-masked user id");
+
             throw e;
         }
         return userId;
@@ -196,10 +198,10 @@ public class UserMaskHandler {
             key = Arrays.copyOf(key, 16);
             secretKeySpec = new SecretKeySpec(key, "AES");
         } catch (NoSuchAlgorithmException e) {
-            log.error("Error while getting  SecretKeySpec: " ,  e);
+            log.error("Error while getting  SecretKeySpec.");
             throw e;
         } catch (UnsupportedEncodingException e) {
-            log.error("Error while getting SecretKeySpec : ",  e);
+            log.error("Error while getting SecretKeySpec.");
             throw e;
         }
         return secretKeySpec;
