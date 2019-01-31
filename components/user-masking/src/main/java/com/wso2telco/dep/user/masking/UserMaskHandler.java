@@ -180,7 +180,7 @@ public class UserMaskHandler {
             cipher.init(Cipher.DECRYPT_MODE, getSecretKeySpec(secretKey));
             userId = new String(cipher.doFinal(Base64.decodeBase64(maskedUserId.getBytes())));
         } catch (Exception e) {
-            log.error("Error while decrypting User ID : " +  maskedUserId + "Possible reasons may be incorrect " +
+            log.warn("Error while decrypting User ID : " +  maskedUserId + "Possible reasons may be incorrect " +
                     "user mask configuration, configuration changed without proper migration or already un-masked user id");
 
             throw e;
